@@ -1,4 +1,3 @@
-import os
 import re
 import string
 import asyncio
@@ -131,8 +130,9 @@ def text_to_speech(text):
         stream.close()
         p.terminate()
 
-async def main(memory_size=8):
+async def run():
     system_message = {'role': 'system', 'content': SYSTEM_PROMPT}
+    memory_size = 8
     messages = []
     while True:
         user_message = await transcribe_audio()
@@ -146,6 +146,5 @@ async def main(memory_size=8):
         console.print(assistant_message, style='dark_orange')
         text_to_speech(assistant_message)
 
-
-if __name__ == '__main__':
-    asyncio.run(main())
+def main():
+    asyncio.run(run())
