@@ -4,10 +4,22 @@ import { useState, useRef } from 'react';
 
 
 export default function Home() {
-  const [transcription, setTranscription] = useState([]);
+  const [messages, setMessages] = useState([{ role: null, text: '' }]);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const socketRef = useRef(null);
+
+  function handleUserMessage({ type, text }) {
+    setMessages(prevMessages => {
+      const newMessages = [...prevMessages];
+      newMessages[newMessages.length - 1] = { role: 'user', text };
+      if (type === 'transcript_final') {
+        newMessages.push({ role: null, text: '' });
+      }
+      return newMessages;
+    });
+  };
+
 
   async function startTranscription() {
     try {
@@ -27,7 +39,7 @@ export default function Home() {
 
       socket.onmessage = (message) => {
         const data = JSON.parse(message.data);
-        setTranscription(prev => [...prev, data.text]);
+        handleUserMessage(data);
       };
 
       socket.onclose = () => {
@@ -66,8 +78,8 @@ export default function Home() {
         {isRecording ? 'Stop transcription' : 'Start transcription'}
       </button>
       <div>
-        {transcription.map((message, idx) => (
-          <p key={idx}>{message}</p>
+        {messages.map(({ role, text }, idx) => (
+          <p key={idx}>{text}</p>
         ))}
       </div>
     </div>

@@ -12,19 +12,30 @@ dg_connection_options = LiveOptions(
     smart_format=True,
     # To get UtteranceEnd, the following must be set:
     interim_results=True,
-    utterance_end_ms='1000',
+    utterance_end_ms='1500',
     vad_events=True,
     # Time in milliseconds of silence to wait for before finalizing speech
-    endpointing=300,
+    endpointing=500,
 )
 
-async def transcribe_audio(websocket):
+async def start_transcription(transcript_queue):
     dg_connection = deepgram.listen.asynclive.v('1')
+    transcript_parts = []
     
     async def on_message(self, result, **kwargs):
+        nonlocal transcript_parts
         sentence = result.channel.alternatives[0].transcript
+        if len(sentence) == 0:
+            return
         if result.is_final:
-            await websocket.send_json({'text': sentence})
+            transcript_parts.append(sentence)
+            await transcript_queue.put({'type': 'transcript_final', 'text': sentence})
+            if result.speech_final:
+                full_transcript = ' '.join(transcript_parts)
+                transcript_parts = []
+                await transcript_queue.put({'type': 'speech_final', 'text': full_transcript})
+        else:
+            await transcript_queue.put({'type': 'transcript_interim', 'text': sentence})
     
     dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
     if await dg_connection.start(dg_connection_options) is False:
