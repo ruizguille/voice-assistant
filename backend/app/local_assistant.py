@@ -74,10 +74,10 @@ async def transcribe_audio():
             sample_rate=16000,
             # To get UtteranceEnd, the following must be set:
             interim_results=True,
-            utterance_end_ms='1000',
+            utterance_end_ms='1500',
             vad_events=True,
             # Time in milliseconds of silence to wait for before finalizing speech
-            endpointing=300,
+            endpointing=500,
         )
         addons = {
             # Prevent waiting for additional numbers

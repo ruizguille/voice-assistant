@@ -1,8 +1,7 @@
-import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.transcription import start_transcription
+from app.assistant import Assistant
 
 app = FastAPI()
 
@@ -24,24 +23,16 @@ async def process_transcripts(websocket, transcript_queue):
 
 @app.websocket('/listen')
 async def websocket_listen(websocket: WebSocket):
-    transcript_queue = asyncio.Queue()
     await websocket.accept()
-    try:
-        # Start the transcription process
-        dg_connection = await start_transcription(transcript_queue)
-        
-        # Create a task to process transcripts concurrently
-        processor_task = asyncio.create_task(process_transcripts(websocket, transcript_queue))
-
-        # Receive audio stream from the client and send it to Deepgram to transcribe it
-        while True:
-            data = await websocket.receive_bytes()
-            await dg_connection.send(data)
+    assistant = Assistant(websocket)
     
+    try:
+        await assistant.run()
     except WebSocketDisconnect:
         print('Client disconnected')
     except Exception as e:
         print(f'Error: {e}')
     finally:
-        # Ensure the transcript processor task is canceled if the WebSocket disconnects
-        processor_task.cancel()
+        pass
+        # TODO: Need to cleanup resources (processor_task.cancel() and dg_connection.finish())
+        # when the assistant stops running or the websocket connection is closed
