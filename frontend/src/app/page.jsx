@@ -4,22 +4,29 @@ import { useState, useRef } from 'react';
 
 
 export default function Home() {
-  const [messages, setMessages] = useState([{ role: null, text: '' }]);
+  const [messages, setMessages] = useState([{ role: 'user', content: '' }]);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const socketRef = useRef(null);
 
-  function handleUserMessage({ type, text }) {
+  function handleUserMessage({ type, content }) {
+    const newMessage = { role: 'user', content, final: type === 'transcript_final' };
     setMessages(prevMessages => {
       const newMessages = [...prevMessages];
-      newMessages[newMessages.length - 1] = { role: 'user', text };
-      if (type === 'transcript_final') {
-        newMessages.push({ role: null, text: '' });
+      const lastMessage = newMessages?.[newMessages.length - 1];
+      if (!lastMessage?.final && lastMessage?.role === 'user') {
+        newMessages[newMessages.length - 1] = newMessage;
+      } else {
+        newMessages.push(newMessage);
       }
       return newMessages;
     });
   };
 
+  function handleAssistantMessage({ content }) {
+    const newMessage = { role: 'assistant', content };
+    setMessages(prevMessages => [...prevMessages, newMessage]);
+  }
 
   async function startTranscription() {
     try {
@@ -37,9 +44,13 @@ export default function Home() {
         setIsRecording(true);
       };
 
-      socket.onmessage = (message) => {
-        const data = JSON.parse(message.data);
-        handleUserMessage(data);
+      socket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'assistant') {
+          handleAssistantMessage(message);
+        } else {
+          handleUserMessage(message);
+        }
       };
 
       socket.onclose = () => {
@@ -78,8 +89,10 @@ export default function Home() {
         {isRecording ? 'Stop transcription' : 'Start transcription'}
       </button>
       <div>
-        {messages.map(({ role, text }, idx) => (
-          <p key={idx}>{text}</p>
+        {messages.map(({ role, content }, idx) => (
+          <p key={idx} className={role === 'user' ? 'text-cyan-600' : 'text-orange-600'}>
+            {content}
+          </p>
         ))}
       </div>
     </div>

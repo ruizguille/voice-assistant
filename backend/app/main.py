@@ -13,14 +13,6 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-async def process_transcripts(websocket, transcript_queue):
-    while True:
-        transcript = await transcript_queue.get()
-        if transcript['type'] == 'speech_final':
-            print('FINAL!!')
-        else:
-            await websocket.send_json(transcript)
-
 @app.websocket('/listen')
 async def websocket_listen(websocket: WebSocket):
     await websocket.accept()
