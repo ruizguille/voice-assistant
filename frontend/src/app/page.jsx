@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 
 function Home() {
-  const [messages, setMessages] = useState([{ role: 'user', content: '' }]);
+  const [messages, setMessages] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const wsRef = useRef(null);
@@ -42,17 +42,20 @@ function Home() {
         sourceBufferRef.current.appendBuffer(audioDataRef.current.shift());
       }
     }
+
+    const messageTypeHandlers = {
+      'assistant': handleAssistantMessage,
+      'transcript_interim': handleUserMessage,
+      'transcript_final': handleUserMessage,
+      'end': stopConversation
+    }
     
     wsRef.current.onmessage = (event) => {
       if (event.data instanceof ArrayBuffer) {
         handleAudioStream(event.data);
       } else {
         const message = JSON.parse(event.data);
-        if (message.type === 'assistant') {
-          handleAssistantMessage(message);
-        } else {
-          handleUserMessage(message);
-        }
+        messageTypeHandlers[message.type](message);
       }
     };
   }
@@ -123,6 +126,7 @@ function Home() {
   }
 
   async function startConversation() {
+    setMessages([]);
     openWebSocketConnection();
     await startMicrophone();
     startAudioPlayer();

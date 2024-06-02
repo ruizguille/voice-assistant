@@ -75,7 +75,7 @@ class Assistant:
             data = await self.websocket.receive_bytes()
             await self.dg_connection.send(data)
     
-    def should_end_conversation(text):
+    def should_end_conversation(self, text):
         text = text.translate(str.maketrans('', '', string.punctuation))
         text = text.strip().lower()
         return re.search(r'\b(goodbye|bye)\b$', text) is not None
@@ -95,8 +95,9 @@ class Assistant:
         while True:
             transcript = await self.transcript_queue.get()
             if transcript['type'] == 'speech_final':
-                # if self.should_end_conversation(transcript['content']):
-                #     pass
+                if self.should_end_conversation(transcript['content']):
+                    await self.websocket.send_json({'type': 'end'})
+                    break
 
                 self.chat_messages.append({'role': 'user', 'content': transcript['content']})
                 response = await self.assistant_chat(
