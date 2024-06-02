@@ -5,15 +5,15 @@ import { useState, useEffect, useRef } from 'react';
 function Home() {
   const [messages, setMessages] = useState([{ role: 'user', content: '' }]);
   const [isRunning, setIsRunning] = useState(false);
-  const startedRef = useRef(false);
+  const [isListening, setIsListening] = useState(false);
   const wsRef = useRef(null);
   const mediaRecorderRef = useRef(null);
+  const mediaSourceRef = useRef(null);
   const sourceBufferRef = useRef(null);
   const audioElementRef = useRef(null);
   const audioDataRef = useRef([]);
 
-  /* Initialize WebSocket connection */
-  useEffect(() => {
+  function openWebSocketConnection() {
     wsRef.current = new WebSocket('ws://localhost:8000/listen');
     wsRef.current.binaryType = 'arraybuffer';
 
@@ -55,43 +55,35 @@ function Home() {
         }
       }
     };
+  }
 
-    // Cleanup
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      
-    };
-  }, []);
-
-  /* Initialize Microphone */
-  useEffect(() => {
-    async function initMicrophone() {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      mediaRecorderRef.current.addEventListener('dataavailable', e => {
-        if (e.data.size > 0 && wsRef.current.readyState == WebSocket.OPEN) {
-          wsRef.current.send(e.data);
-        }
-      });
+  function closeWebSocketConnection() {
+    if (wsRef.current) {
+      wsRef.current.close();
     }
+  }
 
-    initMicrophone();
-
-    // Cleanup
-    return () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
-        mediaRecorderRef.current.stop();
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+  async function startMicrophone() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    mediaRecorderRef.current.addEventListener('dataavailable', e => {
+      if (e.data.size > 0 && wsRef.current.readyState == WebSocket.OPEN) {
+        wsRef.current.send(e.data);
       }
-    };
-  }, []);
+    });
+    mediaRecorderRef.current.start(250);
+  }
 
-  /* Initialize Audio Player */
-  useEffect(() => {
-    // Initialize MediaSource and event handlers
-    const mediaSource = new MediaSource();
+  function stopMicrophone() {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  }
+
+  function startAudioPlayer() {
+    // Initialize MediaSource and event listeners
+    mediaSourceRef.current = new MediaSource();
     
     function handleUpdateEnd() {
       if (audioDataRef.current.length > 0 && !sourceBufferRef.current.updating) {
@@ -100,59 +92,78 @@ function Home() {
     }
     
     function handleSourceOpen() {
-      sourceBufferRef.current = mediaSource.addSourceBuffer('audio/mpeg');
+      sourceBufferRef.current = mediaSourceRef.current.addSourceBuffer('audio/mpeg');
       sourceBufferRef.current.addEventListener('updateend', handleUpdateEnd);
     }
     
-    mediaSource.addEventListener('sourceopen', handleSourceOpen);
+    mediaSourceRef.current.addEventListener('sourceopen', handleSourceOpen);
     
     // Initialize Audio Element
-    const audioUrl = URL.createObjectURL(mediaSource);
+    const audioUrl = URL.createObjectURL(mediaSourceRef.current);
     audioElementRef.current = new Audio(audioUrl);
+    audioElementRef.current.play();
+  }
 
-    // Cleanup
-    return () => {
-      if (audioElementRef.current) {
-        audioElementRef.current.pause();
-        audioElementRef.current.src = '';
-        audioElementRef.current = null;
-      }
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
-      if (mediaSource) {
-        mediaSource.removeEventListener('sourceopen', handleSourceOpen);
-      }
+  function stopAudioPlayer() {
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      URL.revokeObjectURL(audioElementRef.current.src);
+      audioElementRef.current = null;
+    }
+
+    if (mediaSourceRef.current) {
       if (sourceBufferRef.current) {
-        sourceBufferRef.current.removeEventListener('updateend', handleUpdateEnd);
+        mediaSourceRef.current.removeSourceBuffer(sourceBufferRef.current);
         sourceBufferRef.current = null;
       }
-    };
-  }, []);
+      mediaSourceRef.current = null;
+    }
 
-  function toggleConversation() {
-    if (isRunning) {
+    audioDataRef.current = [];
+  }
+
+  async function startConversation() {
+    openWebSocketConnection();
+    await startMicrophone();
+    startAudioPlayer();
+    setIsRunning(true);
+    setIsListening(true);
+  }
+
+  function stopConversation() {
+    closeWebSocketConnection();
+    stopMicrophone();
+    stopAudioPlayer();
+    setIsRunning(false);
+    setIsListening(false);
+  }
+
+  function toggleListening() {
+    if (isListening) {
       mediaRecorderRef.current.pause();
     } else {
-      if (!startedRef.current) {
-        mediaRecorderRef.current.start(250);
-        audioElementRef.current.play();
-        startedRef.current = true;
-      } else {
-        mediaRecorderRef.current.resume();
-      }
+      mediaRecorderRef.current.resume();
     }
-    setIsRunning(!isRunning);
+    setIsListening(!isListening);
   }
 
   return (
     <div className='p-6'>
-      <button
-        className='block border border-slate-400 px-4 py-1 rounded-md'
-        onClick={toggleConversation}
-      >
-        {isRunning ? 'Stop conversation' : 'Start conversation'}
-      </button>
+      <div className='flex gap-4'>
+        <button
+          className='border border-slate-400 px-4 py-1 rounded-md'
+          onClick={isRunning ? stopConversation : startConversation}
+        >
+          {isRunning ? 'Stop conversation' : 'Start conversation'}
+        </button>
+        <button
+          className='border border-slate-400 px-4 py-1 rounded-md'
+          onClick={toggleListening}
+          disabled={!isRunning}
+        >
+          {isListening ? 'Stop listening' : 'Listen'}
+        </button>
+      </div>
       <div>
         {messages.map(({ role, content }, idx) => (
           <p key={idx} className={role === 'user' ? 'text-cyan-600' : 'text-orange-600'}>
