@@ -8,7 +8,6 @@ function Home() {
   const startedRef = useRef(false);
   const wsRef = useRef(null);
   const mediaRecorderRef = useRef(null);
-  const mediaSourceRef = useRef(null);
   const sourceBufferRef = useRef(null);
   const audioElementRef = useRef(null);
   const audioDataRef = useRef([]);

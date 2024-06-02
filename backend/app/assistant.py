@@ -1,5 +1,7 @@
 import asyncio
 import httpx
+import re
+import string
 from deepgram import (
     DeepgramClient, DeepgramClientOptions, LiveTranscriptionEvents, LiveOptions
 )
@@ -42,7 +44,7 @@ class Assistant:
         res = await groq.chat.completions.create(messages=messages, model=model)
         return res.choices[0].message.content
     
-    async def start_transcription(self):
+    async def transcribe_audio(self):
         async def on_message(self_handler, result, **kwargs):
             sentence = result.channel.alternatives[0].transcript
             if len(sentence) == 0:
@@ -67,6 +69,16 @@ class Assistant:
         self.dg_connection.on(LiveTranscriptionEvents.UtteranceEnd, on_utterance_end)
         if await self.dg_connection.start(dg_connection_options) is False:
             raise Exception('Failed to connect to Deepgram')
+        
+        # Receive audio stream from the client and send it to Deepgram to transcribe it
+        while True:
+            data = await self.websocket.receive_bytes()
+            await self.dg_connection.send(data)
+    
+    def should_end_conversation(text):
+        text = text.translate(str.maketrans('', '', string.punctuation))
+        text = text.strip().lower()
+        return re.search(r'\b(goodbye|bye)\b$', text) is not None
     
     async def text_to_speech(self, text):
         headers = {
@@ -83,6 +95,9 @@ class Assistant:
         while True:
             transcript = await self.transcript_queue.get()
             if transcript['type'] == 'speech_final':
+                # if self.should_end_conversation(transcript['content']):
+                #     pass
+
                 self.chat_messages.append({'role': 'user', 'content': transcript['content']})
                 response = await self.assistant_chat(
                     [self.system_message] + self.chat_messages[-self.memory_size:]
@@ -94,14 +109,12 @@ class Assistant:
                 await self.websocket.send_json(transcript)
     
     async def run(self):
-        # Start the transcription process
-        await self.start_transcription()
+        # Create a task to transcribe the audio
+        transcription_task = asyncio.create_task(self.transcribe_audio())
         
-        # Create a task to process transcripts concurrently
-        processor_task = asyncio.create_task(self.manage_conversation())
+        # Run the conversation manager
+        await self.manage_conversation()
 
-        # Receive audio stream from the client and send it to Deepgram to transcribe it
-        while True:
-            data = await self.websocket.receive_bytes()
-            await self.dg_connection.send(data)
+        # Cancel the transcription task when the conversation ends
+        transcription_task.cancel()
         
