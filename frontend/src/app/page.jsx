@@ -68,7 +68,7 @@ function Home() {
 
   async function startMicrophone() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    mediaRecorderRef.current = new MediaRecorder(stream);
     mediaRecorderRef.current.addEventListener('dataavailable', e => {
       if (e.data.size > 0 && wsRef.current.readyState == WebSocket.OPEN) {
         wsRef.current.send(e.data);
@@ -95,8 +95,10 @@ function Home() {
     }
     
     function handleSourceOpen() {
-      sourceBufferRef.current = mediaSourceRef.current.addSourceBuffer('audio/mpeg');
-      sourceBufferRef.current.addEventListener('updateend', handleUpdateEnd);
+      if (MediaSource.isTypeSupported('audio/mpeg')) {
+        sourceBufferRef.current = mediaSourceRef.current.addSourceBuffer('audio/mpeg');
+        sourceBufferRef.current.addEventListener('updateend', handleUpdateEnd);
+      }
     }
     
     mediaSourceRef.current.addEventListener('sourceopen', handleSourceOpen);
