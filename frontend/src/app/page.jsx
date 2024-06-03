@@ -19,6 +19,12 @@ function Home() {
 
     function handleUserMessage({ type, content }) {
       const newMessage = { role: 'user', content, final: type === 'transcript_final' };
+      
+      // If user interrupts while audio is playing, skip the audio currently playing
+      if (newMessage.final && isAudioPlaying()) {
+        skipCurrentAudio();
+      }
+      
       setMessages(prevMessages => {
         const newMessages = [...prevMessages];
         const lastMessage = newMessages?.[newMessages.length - 1];
@@ -88,25 +94,36 @@ function Home() {
     // Initialize MediaSource and event listeners
     mediaSourceRef.current = new MediaSource();
     
-    function handleUpdateEnd() {
-      if (audioDataRef.current.length > 0 && !sourceBufferRef.current.updating) {
-        sourceBufferRef.current.appendBuffer(audioDataRef.current.shift());
-      }
-    }
-    
-    function handleSourceOpen() {
-      if (MediaSource.isTypeSupported('audio/mpeg')) {
-        sourceBufferRef.current = mediaSourceRef.current.addSourceBuffer('audio/mpeg');
-        sourceBufferRef.current.addEventListener('updateend', handleUpdateEnd);
-      }
-    }
-    
-    mediaSourceRef.current.addEventListener('sourceopen', handleSourceOpen);
-    
+    mediaSourceRef.current.addEventListener('sourceopen', () => {
+      if (!MediaSource.isTypeSupported('audio/mpeg')) return;
+      
+      sourceBufferRef.current = mediaSourceRef.current.addSourceBuffer('audio/mpeg');
+      sourceBufferRef.current.addEventListener('updateend', () => {
+        if (audioDataRef.current.length > 0 && !sourceBufferRef.current.updating) {
+          sourceBufferRef.current.appendBuffer(audioDataRef.current.shift());
+        }
+      });
+    });
+
     // Initialize Audio Element
     const audioUrl = URL.createObjectURL(mediaSourceRef.current);
     audioElementRef.current = new Audio(audioUrl);
     audioElementRef.current.play();
+  }
+
+  function isAudioPlaying() {
+    return audioElementRef.current.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA;
+  }
+
+  function skipCurrentAudio() {
+    audioDataRef.current = [];
+    const buffered = sourceBufferRef.current.buffered;
+    if (buffered.length > 0) {
+      if (sourceBufferRef.current.updating) {
+        sourceBufferRef.current.abort();
+      }
+    }
+    audioElementRef.current.currentTime = buffered.end(buffered.length - 1);
   }
 
   function stopAudioPlayer() {
