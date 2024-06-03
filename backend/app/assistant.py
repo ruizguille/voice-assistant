@@ -2,6 +2,7 @@ import asyncio
 import httpx
 import re
 import string
+from starlette.websockets import WebSocketDisconnect, WebSocketState
 from deepgram import (
     DeepgramClient, DeepgramClientOptions, LiveTranscriptionEvents, LiveOptions
 )
@@ -32,17 +33,33 @@ groq = AsyncGroq(api_key=settings.GROQ_API_KEY)
 class Assistant:
     def __init__(self, websocket, chat_messages=None, memory_size=10):
         self.websocket = websocket
-        self.dg_connection = deepgram.listen.asynclive.v('1')
         self.transcript_parts = []
         self.transcript_queue = asyncio.Queue()
         self.system_message = {'role': 'system', 'content': SYSTEM_PROMPT}
         self.chat_messages = [] if chat_messages is None else chat_messages
         self.memory_size = memory_size
         self.httpx_client = httpx.AsyncClient()
+        self.finish_event = asyncio.Event()
     
     async def assistant_chat(self, messages, model='llama3-8b-8192'):
         res = await groq.chat.completions.create(messages=messages, model=model)
         return res.choices[0].message.content
+    
+    def should_end_conversation(self, text):
+        text = text.translate(str.maketrans('', '', string.punctuation))
+        text = text.strip().lower()
+        return re.search(r'\b(goodbye|bye)\b$', text) is not None
+    
+    async def text_to_speech(self, text):
+        headers = {
+            'Authorization': f'Token {settings.DEEPGRAM_API_KEY}',
+            'Content-Type': 'application/json'
+        }
+        async with self.httpx_client.stream(
+            'POST', DEEPGRAM_TTS_URL, headers=headers, json={'text': text}
+        ) as res:
+            async for chunk in res.aiter_bytes(1024):
+                await self.websocket.send_bytes(chunk)
     
     async def transcribe_audio(self):
         async def on_message(self_handler, result, **kwargs):
@@ -65,38 +82,27 @@ class Assistant:
                 self.transcript_parts = []
                 await self.transcript_queue.put({'type': 'speech_final', 'content': full_transcript})
 
-        self.dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-        self.dg_connection.on(LiveTranscriptionEvents.UtteranceEnd, on_utterance_end)
-        if await self.dg_connection.start(dg_connection_options) is False:
+        dg_connection = deepgram.listen.asynclive.v('1')
+        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+        dg_connection.on(LiveTranscriptionEvents.UtteranceEnd, on_utterance_end)
+        if await dg_connection.start(dg_connection_options) is False:
             raise Exception('Failed to connect to Deepgram')
         
-        # Receive audio stream from the client and send it to Deepgram to transcribe it
-        while True:
-            data = await self.websocket.receive_bytes()
-            await self.dg_connection.send(data)
-    
-    def should_end_conversation(self, text):
-        text = text.translate(str.maketrans('', '', string.punctuation))
-        text = text.strip().lower()
-        return re.search(r'\b(goodbye|bye)\b$', text) is not None
-    
-    async def text_to_speech(self, text):
-        headers = {
-            'Authorization': f'Token {settings.DEEPGRAM_API_KEY}',
-            'Content-Type': 'application/json'
-        }
-        async with self.httpx_client.stream(
-            'POST', DEEPGRAM_TTS_URL, headers=headers, json={'text': text}
-        ) as res:
-            async for chunk in res.aiter_bytes(1024):
-                await self.websocket.send_bytes(chunk)
+        try:
+            while not self.finish_event.is_set():
+                # Receive audio stream from the client and send it to Deepgram to transcribe it
+                data = await self.websocket.receive_bytes()
+                await dg_connection.send(data)
+        finally:
+            await dg_connection.finish()
     
     async def manage_conversation(self):
-        while True:
+        while not self.finish_event.is_set():
             transcript = await self.transcript_queue.get()
             if transcript['type'] == 'speech_final':
                 if self.should_end_conversation(transcript['content']):
-                    await self.websocket.send_json({'type': 'end'})
+                    self.finish_event.set()
+                    await self.websocket.send_json({'type': 'finish'})
                     break
 
                 self.chat_messages.append({'role': 'user', 'content': transcript['content']})
@@ -110,12 +116,13 @@ class Assistant:
                 await self.websocket.send_json(transcript)
     
     async def run(self):
-        # Create a task to transcribe the audio
-        transcription_task = asyncio.create_task(self.transcribe_audio())
-        
-        # Run the conversation manager
-        await self.manage_conversation()
-
-        # Cancel the transcription task when the conversation ends
-        transcription_task.cancel()
-        
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(self.transcribe_audio())
+                tg.create_task(self.manage_conversation())
+        except* WebSocketDisconnect:
+            print('Client disconnected')
+        finally:
+            await self.httpx_client.aclose()
+            if self.websocket.client_state != WebSocketState.DISCONNECTED:
+                await self.websocket.close()

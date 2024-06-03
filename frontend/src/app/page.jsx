@@ -47,7 +47,7 @@ function Home() {
       'assistant': handleAssistantMessage,
       'transcript_interim': handleUserMessage,
       'transcript_final': handleUserMessage,
-      'end': stopConversation
+      'finish': stopConversation
     }
     
     wsRef.current.onmessage = (event) => {

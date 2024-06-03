@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.assistant import Assistant
@@ -17,14 +17,4 @@ app.add_middleware(
 async def websocket_listen(websocket: WebSocket):
     await websocket.accept()
     assistant = Assistant(websocket)
-    
-    try:
-        await assistant.run()
-    except WebSocketDisconnect:
-        print('Client disconnected')
-    except Exception as e:
-        print(f'Error: {e}')
-    finally:
-        pass
-        # TODO: Need to cleanup resources (processor_task.cancel() and dg_connection.finish())
-        # when the assistant stops running or the websocket connection is closed
+    await assistant.run()
