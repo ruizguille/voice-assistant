@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useReducer, useRef } from 'react';
+import { useState, useReducer, useRef, useLayoutEffect } from 'react';
+import Image from 'next/image';
 import conversationReducer from './conversationReducer';
+import micIcon from '../../public/mic.svg';
+import micOffIcon from '../../public/mic-off.svg';
 
 const initialConversation = { messages: [], finalTranscripts: [], interimTranscript: '' };
 
@@ -15,6 +18,12 @@ function Home() {
   const sourceBufferRef = useRef(null);
   const audioElementRef = useRef(null);
   const audioDataRef = useRef([]);
+  const messagesEndRef = useRef(null);
+
+  // Automatically scroll to bottom message
+  useLayoutEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [conversation]);
 
   function openWebSocketConnection() {
     wsRef.current = new WebSocket('ws://localhost:8000/listen');
@@ -153,34 +162,40 @@ function Home() {
     setIsListening(!isListening);
   }
 
-  const currentTranscript = conversation.finalTranscripts.join(' ') + ' ' + conversation.interimTranscript;
+  const currentTranscript = [...conversation.finalTranscripts, conversation.interimTranscript].join(' ');
 
   return (
-    <div className='p-6'>
-      <div className='flex gap-4'>
-        <button
-          className='border border-slate-400 px-4 py-1 rounded-md'
-          onClick={isRunning ? stopConversation : startConversation}
-        >
-          {isRunning ? 'Stop conversation' : 'Start conversation'}
-        </button>
-        <button
-          className='border border-slate-400 px-4 py-1 rounded-md'
-          onClick={toggleListening}
-          disabled={!isRunning}
-        >
-          {isListening ? 'Stop listening' : 'Listen'}
-        </button>
+    <div className='flex flex-col h-svh pt-14 pb-4'>
+      <div className='flex flex-col justify-center items-center'>
+        <div className={`wave ${isRunning ? 'running' : ''}`} />
+        <div className='flex items-center mt-14 gap-6'>
+          <button
+            className='w-48 border border-primary-orange text-primary-orange font-semibold px-4 py-2 rounded-2xl hover:bg-primary-orange/5'
+            onClick={isRunning ? stopConversation : startConversation}
+          >
+            {isRunning ? 'Stop conversation' : 'Start conversation'}
+          </button>
+          <button
+            className='h-9 w-9 flex justify-center items-center bg-primary-orange rounded-full shadow-lg hover:opacity-70 disabled:opacity-70'
+            onClick={toggleListening}
+            disabled={!isRunning}
+          >
+            <Image src={isListening ? micIcon : micOffIcon} height={21} width={21} alt='microphone' />
+          </button>
+        </div>
       </div>
-      <div>
-        {conversation.messages.map(({ role, content }, idx) => (
-          <div key={idx} className={role === 'user' ? 'text-cyan-600' : 'text-orange-600'}>
-            {content}
-          </div>
-        ))}
-        {currentTranscript && (
-          <div className='text-cyan-600'>{currentTranscript}</div>
-        )}
+      <div className='w-full max-w-[600px] mt-6 mx-auto overflow-y-auto'>
+        <div className='flex flex-col items-start p-4 rounded-lg space-y-3'>
+          {conversation.messages.map(({ role, content }, idx) => (
+            <div key={idx} className={role === 'user' ? 'user-bubble' : 'assistant-bubble'}>
+              {content}
+            </div>
+          ))}
+          {currentTranscript && (
+            <div className='user-bubble'>{currentTranscript}</div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
     </div>
   );

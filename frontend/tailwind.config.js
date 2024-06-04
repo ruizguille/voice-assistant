@@ -16,7 +16,12 @@ module.exports = {
       'sans': ['var(--font-open-sans)'],
     },
     extend: {
-      colors: {},
+      colors: {
+        'primary-blue': 'rgb(178, 217, 231)',
+        'primary-orange': '#f3c3b1',
+        'main-text': 'rgb(107, 107, 107)',
+        'light-gray': 'rgb(244, 244, 244)',
+      },
     },
   },
   plugins: [],
