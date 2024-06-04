@@ -39,7 +39,7 @@ function Home() {
     function handleJsonMessage(jsonData) {
       const message = JSON.parse(jsonData);
       if (message.type === 'finish') {
-        stopConversation();
+        endConversation();
       } else {
         // If user interrupts while audio is playing, skip the audio currently playing
         if (message.type === 'transcript_final' && isAudioPlaying()) {
@@ -145,7 +145,7 @@ function Home() {
     setIsListening(true);
   }
 
-  function stopConversation() {
+  function endConversation() {
     closeWebSocketConnection();
     stopMicrophone();
     stopAudioPlayer();
@@ -168,12 +168,18 @@ function Home() {
     <div className='flex flex-col h-svh pt-14 pb-4'>
       <div className='flex flex-col justify-center items-center'>
         <div className={`wave ${isRunning ? 'running' : ''}`} />
-        <div className='flex items-center mt-14 gap-6'>
+        <p className='mt-14 text-[13px] text-primary-orange'>
+          {isRunning
+            ? 'You can also end the conversation by saying "bye" or "goodbye"'
+            : 'Click here to start a voice conversation with the assistant'
+          }
+        </p>
+        <div className='flex items-center mt-3 gap-6'>
           <button
             className='w-48 border border-primary-orange text-primary-orange font-semibold px-4 py-2 rounded-2xl hover:bg-primary-orange/5'
-            onClick={isRunning ? stopConversation : startConversation}
+            onClick={isRunning ? endConversation : startConversation}
           >
-            {isRunning ? 'Stop conversation' : 'Start conversation'}
+            {isRunning ? 'End conversation' : 'Start conversation'}
           </button>
           <button
             className='h-9 w-9 flex justify-center items-center bg-primary-orange rounded-full shadow-lg hover:opacity-70 disabled:opacity-70'
