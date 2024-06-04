@@ -56,6 +56,10 @@ function Home() {
         handleJsonMessage(event.data);
       }
     };
+
+    wsRef.current.onclose = () => {
+      endConversation();
+    }
   }
 
   function closeWebSocketConnection() {
