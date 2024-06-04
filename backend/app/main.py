@@ -13,6 +13,11 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+@app.head('/health')
+@app.get('/health')
+def health_check():
+    return 'ok'
+
 @app.websocket('/listen')
 async def websocket_listen(websocket: WebSocket):
     await websocket.accept()
