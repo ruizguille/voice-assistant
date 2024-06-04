@@ -26,7 +26,7 @@ function Home() {
   }, [conversation]);
 
   function openWebSocketConnection() {
-    wsRef.current = new WebSocket('ws://localhost:8000/listen');
+    wsRef.current = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_URL);
     wsRef.current.binaryType = 'arraybuffer';
 
     function handleAudioStream(streamData) {
