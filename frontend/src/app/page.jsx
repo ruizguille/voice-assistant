@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useReducer, useRef } from 'react';
+import conversationReducer from './conversationReducer';
+
+const initialConversation = { messages: [], finalTranscripts: [], interimTranscript: '' };
 
 function Home() {
-  const [messages, setMessages] = useState([]);
+  const [conversation, dispatch] = useReducer(conversationReducer, initialConversation);
   const [isRunning, setIsRunning] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const wsRef = useRef(null);
@@ -17,31 +20,6 @@ function Home() {
     wsRef.current = new WebSocket('ws://localhost:8000/listen');
     wsRef.current.binaryType = 'arraybuffer';
 
-    function handleUserMessage({ type, content }) {
-      const newMessage = { role: 'user', content, final: type === 'transcript_final' };
-      
-      // If user interrupts while audio is playing, skip the audio currently playing
-      if (newMessage.final && isAudioPlaying()) {
-        skipCurrentAudio();
-      }
-      
-      setMessages(prevMessages => {
-        const newMessages = [...prevMessages];
-        const lastMessage = newMessages?.[newMessages.length - 1];
-        if (!lastMessage?.final && lastMessage?.role === 'user') {
-          newMessages[newMessages.length - 1] = newMessage;
-        } else {
-          newMessages.push(newMessage);
-        }
-        return newMessages;
-      });
-    };
-  
-    function handleAssistantMessage({ content }) {
-      const newMessage = { role: 'assistant', content };
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-    }
-
     function handleAudioStream(streamData) {
       audioDataRef.current.push(new Uint8Array(streamData));
       if (sourceBufferRef.current && !sourceBufferRef.current.updating) {
@@ -49,19 +27,24 @@ function Home() {
       }
     }
 
-    const messageTypeHandlers = {
-      'assistant': handleAssistantMessage,
-      'transcript_interim': handleUserMessage,
-      'transcript_final': handleUserMessage,
-      'finish': stopConversation
+    function handleJsonMessage(jsonData) {
+      const message = JSON.parse(jsonData);
+      if (message.type === 'finish') {
+        stopConversation();
+      } else {
+        // If user interrupts while audio is playing, skip the audio currently playing
+        if (message.type === 'transcript_final' && isAudioPlaying()) {
+          skipCurrentAudio();
+        }
+        dispatch(message);
+      }
     }
     
     wsRef.current.onmessage = (event) => {
       if (event.data instanceof ArrayBuffer) {
         handleAudioStream(event.data);
       } else {
-        const message = JSON.parse(event.data);
-        messageTypeHandlers[message.type](message);
+        handleJsonMessage(event.data);
       }
     };
   }
@@ -145,7 +128,7 @@ function Home() {
   }
 
   async function startConversation() {
-    setMessages([]);
+    dispatch({ type: 'reset' });
     openWebSocketConnection();
     await startMicrophone();
     startAudioPlayer();
@@ -170,6 +153,8 @@ function Home() {
     setIsListening(!isListening);
   }
 
+  const currentTranscript = conversation.finalTranscripts.join(' ') + ' ' + conversation.interimTranscript;
+
   return (
     <div className='p-6'>
       <div className='flex gap-4'>
@@ -188,11 +173,14 @@ function Home() {
         </button>
       </div>
       <div>
-        {messages.map(({ role, content }, idx) => (
-          <p key={idx} className={role === 'user' ? 'text-cyan-600' : 'text-orange-600'}>
+        {conversation.messages.map(({ role, content }, idx) => (
+          <div key={idx} className={role === 'user' ? 'text-cyan-600' : 'text-orange-600'}>
             {content}
-          </p>
+          </div>
         ))}
+        {currentTranscript && (
+          <div className='text-cyan-600'>{currentTranscript}</div>
+        )}
       </div>
     </div>
   );
