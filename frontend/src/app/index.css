@@ -37,8 +37,8 @@
     width: 40px;
     aspect-ratio: 1;
     border-radius: 50%;
-    background: rgb(243, 195, 177);
-    box-shadow: 0 0 0 0 rgba(243, 195, 177, 0.85);
+    background: theme(colors.primary-orange);
+    box-shadow: 0 0 0 0 theme(colors.primary-orange / 85);
     animation: l2 1.8s infinite linear;
     animation-play-state: paused;
     position: relative;
@@ -52,7 +52,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow: 0 0 0 0 rgba(243, 195, 177, 1);
+    box-shadow: 0 0 0 0 theme(colors.primary-orange);
     animation: inherit;
     animation-delay: -0.6s;
   }
@@ -60,6 +60,8 @@
     animation-delay: -1.2s;
   }
   @keyframes l2 {
-      100% {box-shadow: 0 0 0 50px rgba(243, 195, 177, 0)}
+    100% {
+      box-shadow: 0 0 0 50px theme(colors.primary-orange / 0);
+    }
   }
 }
