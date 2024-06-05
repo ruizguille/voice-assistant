@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -22,4 +23,7 @@ def health_check():
 async def websocket_listen(websocket: WebSocket):
     await websocket.accept()
     assistant = Assistant(websocket)
-    await assistant.run()
+    try:
+        await asyncio.wait_for(assistant.run(), timeout=300)
+    except TimeoutError:
+        print('Connection timeout')
