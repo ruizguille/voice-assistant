@@ -142,11 +142,16 @@ function Home() {
 
   async function startConversation() {
     dispatch({ type: 'reset' });
-    openWebSocketConnection();
-    await startMicrophone();
-    startAudioPlayer();
-    setIsRunning(true);
-    setIsListening(true);
+    try {
+      openWebSocketConnection();
+      await startMicrophone();
+      startAudioPlayer();
+      setIsRunning(true);
+      setIsListening(true);
+    } catch (err) {
+      console.log('Error starting conversation:', err);
+      endConversation();
+    }
   }
 
   function endConversation() {
