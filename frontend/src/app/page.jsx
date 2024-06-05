@@ -86,9 +86,20 @@ function Home() {
     }
   }
 
+  function getMediaSource() {
+    if ('MediaSource' in window) {
+      return new MediaSource();
+    } else if ('ManagedMediaSource' in window) {
+      // Use ManagedMediaSource if available in iPhone
+      return new ManagedMediaSource();
+    } else {
+      console.log('No MediaSource API available');
+    }
+  }
+
   function startAudioPlayer() {
     // Initialize MediaSource and event listeners
-    mediaSourceRef.current = new MediaSource();
+    mediaSourceRef.current = getMediaSource();
     
     mediaSourceRef.current.addEventListener('sourceopen', () => {
       if (!MediaSource.isTypeSupported('audio/mpeg')) return;
