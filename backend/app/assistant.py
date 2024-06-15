@@ -31,12 +31,12 @@ dg_connection_options = LiveOptions(
 groq = AsyncGroq(api_key=settings.GROQ_API_KEY)
 
 class Assistant:
-    def __init__(self, websocket, chat_messages=None, memory_size=10):
+    def __init__(self, websocket, memory_size=10):
         self.websocket = websocket
         self.transcript_parts = []
         self.transcript_queue = asyncio.Queue()
         self.system_message = {'role': 'system', 'content': SYSTEM_PROMPT}
-        self.chat_messages = [] if chat_messages is None else chat_messages
+        self.chat_messages = []
         self.memory_size = memory_size
         self.httpx_client = httpx.AsyncClient()
         self.finish_event = asyncio.Event()

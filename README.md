@@ -63,14 +63,15 @@ cd backend
 poetry run local-assistant
 ```
 
-### Full-Stack Application
+### Full-Stack Web Application
 
-To run the full-stack application:
+To run the full-stack web application:
 
-1. Start the backend server:
+1. Activate the virtual environment for the backend and start the backend server:
 
     ```bash
     cd backend
+    poetry shell
     fastapi dev app/main.py
     ```
 

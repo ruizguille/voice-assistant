@@ -6,7 +6,7 @@ authors = ["ruizguille <guillermo@codeawake.com>"]
 packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 python-dotenv = "^1.0.1"
 groq = "^0.7.0"
 deepgram-sdk = "^3.2.7"
