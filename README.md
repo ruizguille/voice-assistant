@@ -48,7 +48,7 @@ The repository is organized into two main folders:
     npm install
     ```
 
-2. Create a `.env` file in the backend folder copying the `.env.example` file provided that includes the required environment variable:
+2. Create a `.env` file in the frontend folder copying the `.env.example` file provided that includes the required environment variable:
     - `NEXT_PUBLIC_WEBSOCKET_URL`: The WebSocket URL to connect to the backend API.
 
 

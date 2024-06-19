@@ -8,7 +8,7 @@ import micOffIcon from '../../public/mic-off.svg';
 
 const initialConversation = { messages: [], finalTranscripts: [], interimTranscript: '' };
 
-function Home() {
+function VoiceAssistant() {
   const [conversation, dispatch] = useReducer(conversationReducer, initialConversation);
   const [isRunning, setIsRunning] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -89,6 +89,9 @@ function Home() {
   function startAudioPlayer() {
     // Initialize MediaSource and event listeners
     mediaSourceRef.current = getMediaSource();
+    if (!mediaSourceRef.current) {
+      return;
+    }
     
     mediaSourceRef.current.addEventListener('sourceopen', () => {
       if (!MediaSource.isTypeSupported('audio/mpeg')) return;
@@ -118,8 +121,8 @@ function Home() {
       if (sourceBufferRef.current.updating) {
         sourceBufferRef.current.abort();
       }
+      audioElementRef.current.currentTime = buffered.end(buffered.length - 1);
     }
-    audioElementRef.current.currentTime = buffered.end(buffered.length - 1);
   }
 
   function stopAudioPlayer() {
@@ -224,7 +227,8 @@ function getMediaSource() {
     return new ManagedMediaSource();
   } else {
     console.log('No MediaSource API available');
+    return null;
   }
 }
 
-export default Home;
+export default VoiceAssistant;
