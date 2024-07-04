@@ -5,7 +5,9 @@ This repository contains an AI Voice Assistant application built with Python and
 You can access a live demo of the AI Voice Assistant application [in this link](https://demos.codeawake.com/voice-assistant).
 
 For a detailed walkthrough of the code and the technologies used, check out our blog post series:
-- [Part 1: Building a Local Python Voice Assistant](https://codeawake.com/blog/ai-voice-assistant-1).
+- [Part 1: A local Python voice assistant app](https://codeawake.com/blog/ai-voice-assistant-1).
+- [Part 2: A Python backend with FastAPI & WebSockets](https://codeawake.com/blog/ai-voice-assistant-2).
+- [Part 3: An interactive React user interface](https://codeawake.com/blog/ai-voice-assistant-3).
 
 <br/>
 
