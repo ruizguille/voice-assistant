@@ -3,6 +3,7 @@
 import { useState, useReducer, useRef, useLayoutEffect } from 'react';
 import Image from 'next/image';
 import conversationReducer from './conversationReducer';
+import logo from '@/../public/logo.svg';
 import micIcon from '../../public/mic.svg';
 import micOffIcon from '../../public/mic-off.svg';
 
@@ -177,43 +178,49 @@ function VoiceAssistant() {
   const currentTranscript = [...conversation.finalTranscripts, conversation.interimTranscript].join(' ');
 
   return (
-    <div className='flex flex-col h-svh pt-14 pb-4'>
-      <div className='flex flex-col justify-center items-center'>
-        <div className={`wave ${isRunning ? 'running' : ''}`} />
-        <p className='mt-14 text-[13px] text-primary-orange'>
-          {isRunning
-            ? 'You can also end the conversation by saying "bye" or "goodbye"'
-            : 'Click here to start a voice conversation with the assistant'
-          }
-        </p>
-        <div className='flex items-center mt-3 gap-6'>
-          <button
-            className='w-48 border border-primary-orange text-primary-orange font-semibold px-4 py-2 rounded-2xl hover:bg-primary-orange/5'
-            onClick={isRunning ? endConversation : startConversation}
-          >
-            {isRunning ? 'End conversation' : 'Start conversation'}
-          </button>
-          <button
-            className='h-9 w-9 flex justify-center items-center bg-primary-orange rounded-full shadow-lg hover:opacity-70 disabled:opacity-70'
-            onClick={toggleListening}
-            disabled={!isRunning}
-          >
-            <Image src={isListening ? micIcon : micOffIcon} height={21} width={21} alt='microphone' />
-          </button>
+    <div className='w-full max-w-3xl mx-auto px-4'>
+      <div className='sticky top-0 bg-white'>
+        <header className='flex flex-col gap-0.5 pt-4'>
+          <a href='https://codeawake.com'>
+            <Image src={logo} width={128} alt='logo' />
+          </a>
+          <h1 className='font-urbanist text-[1.65rem] font-semibold'>AI Voice Assistant</h1>
+        </header>
+        <div className='sticky top-0 flex flex-col justify-center items-center pt-10 pb-4 bg-white'>
+          <div className={`wave ${isRunning ? 'running' : ''}`} />
+          <p className='mt-12 text-[13px] text-primary-orange'>
+            {isRunning
+              ? 'You can also end the conversation by saying "bye" or "goodbye"'
+              : 'Click here to start a voice conversation with the assistant'
+            }
+          </p>
+          <div className='flex items-center mt-3 gap-6'>
+            <button
+              className='w-48 border border-primary-orange text-primary-orange font-semibold px-4 py-1 rounded-2xl hover:bg-primary-orange/5'
+              onClick={isRunning ? endConversation : startConversation}
+            >
+              {isRunning ? 'End conversation' : 'Start conversation'}
+            </button>
+            <button
+              className='h-9 w-9 flex justify-center items-center bg-primary-orange rounded-full shadow-lg hover:opacity-70 disabled:opacity-70'
+              onClick={toggleListening}
+              disabled={!isRunning}
+            >
+              <Image src={isListening ? micIcon : micOffIcon} height={21} width={21} alt='microphone' />
+            </button>
+          </div>
         </div>
       </div>
-      <div className='w-full max-w-[600px] mt-6 mx-auto overflow-y-auto'>
-        <div className='flex flex-col items-start p-4 rounded-lg space-y-3'>
-          {conversation.messages.map(({ role, content }, idx) => (
-            <div key={idx} className={role === 'user' ? 'user-bubble' : 'assistant-bubble'}>
-              {content}
-            </div>
-          ))}
-          {currentTranscript && (
-            <div className='user-bubble'>{currentTranscript}</div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+      <div className='flex flex-col items-start py-4 rounded-lg space-y-3'>
+        {conversation.messages.map(({ role, content }, idx) => (
+          <div key={idx} className={role === 'user' ? 'user-bubble' : 'assistant-bubble'}>
+            {content}
+          </div>
+        ))}
+        {currentTranscript && (
+          <div className='user-bubble'>{currentTranscript}</div>
+        )}
+        <div ref={messagesEndRef} />
       </div>
     </div>
   );

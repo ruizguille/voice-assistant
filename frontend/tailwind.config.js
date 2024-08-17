@@ -14,12 +14,13 @@ module.exports = {
     },
     fontFamily: {
       'sans': ['var(--font-open-sans)'],
+      'urbanist': ['var(--font-urbanist)'],
     },
     extend: {
       colors: {
-        'primary-blue': 'rgb(178, 217, 231)',
+        'primary-blue': 'rgb(146, 179, 202)',
         'primary-orange': 'rgb(243, 195, 177)',
-        'main-text': 'rgb(107, 107, 107)',
+        'main-text': 'rgb(0, 43, 49)',
         'light-gray': 'rgb(244, 244, 244)',
       },
     },

@@ -1,8 +1,8 @@
-import { Open_Sans } from 'next/font/google';
+import { Open_Sans, Urbanist } from 'next/font/google';
 import './index.css';
 
 export const metadata = {
-  title: 'Voice assistant'
+  title: 'AI Voice Assistant'
 };
 
 const openSans = Open_Sans({
@@ -10,9 +10,14 @@ const openSans = Open_Sans({
   variable: '--font-open-sans',
 });
 
+const urbanist = Urbanist({
+  subsets: ['latin'],
+  variable: '--font-urbanist',
+});
+
 export default function RootLayout({ children }) {
   return (
-    <html lang='en' className={openSans.variable}>
+    <html lang='en' className={`${openSans.variable} ${urbanist.variable}`}>
       <body>{children}</body>
     </html>
   );

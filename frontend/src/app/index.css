@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  body, html, #root {
+    @apply text-main-text h-full;
+  }
+
   ::-webkit-scrollbar {
     @apply h-4 w-2;
   }
@@ -30,11 +34,11 @@
   }
 
   .assistant-bubble {
-    @apply self-end bg-primary-blue text-white;
+    @apply self-end bg-primary-blue/85 text-white;
   }
 
   .wave {
-    width: 40px;
+    width: 30px;
     aspect-ratio: 1;
     border-radius: 50%;
     background: theme(colors.primary-orange);
@@ -61,7 +65,7 @@
   }
   @keyframes l2 {
     100% {
-      box-shadow: 0 0 0 50px theme(colors.primary-orange / 0);
+      box-shadow: 0 0 0 45px theme(colors.primary-orange / 0);
     }
   }
 }
