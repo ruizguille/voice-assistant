@@ -27,7 +27,8 @@ function VoiceAssistant() {
   }, [conversation]);
 
   function openWebSocketConnection() {
-    wsRef.current = new WebSocket(process.env.NEXT_PUBLIC_WEBSOCKET_URL);
+    const ws_url = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8000/listen';
+    wsRef.current = new WebSocket(ws_url);
     wsRef.current.binaryType = 'arraybuffer';
 
     function handleAudioStream(streamData) {
