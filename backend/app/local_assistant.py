@@ -43,7 +43,7 @@ dg_connection_options = LiveOptions(
 )
 
 
-async def assistant_chat(messages, model='llama3-8b-8192'):
+async def assistant_chat(messages, model=settings.LLM):
     res = await groq.chat.completions.create(messages=messages, model=model)
     return res.choices[0].message.content
 

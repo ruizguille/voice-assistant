@@ -41,7 +41,7 @@ class Assistant:
         self.httpx_client = httpx.AsyncClient()
         self.finish_event = asyncio.Event()
     
-    async def assistant_chat(self, messages, model='llama3-8b-8192'):
+    async def assistant_chat(self, messages, model=settings.LLM):
         res = await groq.chat.completions.create(messages=messages, model=model)
         return res.choices[0].message.content
     
