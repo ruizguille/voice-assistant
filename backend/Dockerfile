@@ -3,6 +3,7 @@ FROM python:3.12-slim as requirements-stage
 WORKDIR /tmp
 
 RUN pip install poetry
+RUN poetry self add poetry-plugin-export
 COPY ./pyproject.toml ./poetry.lock* /tmp/
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes --without local 
 
@@ -15,4 +16,4 @@ RUN pip install --no-cache-dir --upgrade -r /home/requirements.txt
 
 COPY ./app /home/app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["fastapi", "run", "app/main.py", "--port", "80"]
