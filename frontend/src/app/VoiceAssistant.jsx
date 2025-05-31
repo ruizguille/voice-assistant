@@ -197,13 +197,13 @@ function VoiceAssistant() {
           </p>
           <div className='flex items-center mt-3 gap-6'>
             <button
-              className='w-48 border border-primary-orange text-primary-orange font-semibold px-4 py-1 rounded-2xl hover:bg-primary-orange/5'
+              className='w-48 border border-primary-orange text-primary-orange font-semibold px-4 py-1 rounded-2xl cursor-pointer hover:bg-primary-orange/5'
               onClick={isRunning ? endConversation : startConversation}
             >
               {isRunning ? 'End conversation' : 'Start conversation'}
             </button>
             <button
-              className='h-9 w-9 flex justify-center items-center bg-primary-orange rounded-full shadow-lg hover:opacity-70 disabled:opacity-70'
+              className='h-9 w-9 flex justify-center items-center bg-primary-orange rounded-full shadow-lg enabled:cursor-pointer hover:opacity-70 disabled:opacity-70'
               onClick={toggleListening}
               disabled={!isRunning}
             >

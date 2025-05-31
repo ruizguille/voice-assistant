@@ -1,6 +1,95 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-*: initial;
+  --font-sans: var(--font-open-sans);
+  --font-urbanist: var(--font-urbanist);
+
+  --color-primary-blue: rgb(146, 179, 202);
+  --color-primary-orange: rgb(243, 195, 177);
+  --color-main-text: rgb(0, 43, 49);
+  --color-light-gray: rgb(244, 244, 244);
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility user-bubble {
+  @apply inline-block max-w-[80%] sm:max-w-[450px] py-2 px-4 rounded-2xl;
+  @apply bg-light-gray text-main-text;
+}
+
+@utility assistant-bubble {
+  @apply inline-block max-w-[80%] sm:max-w-[450px] py-2 px-4 rounded-2xl;
+  @apply self-end bg-primary-blue/85 text-white;
+}
+
+@utility wave {
+  width: 30px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--color-primary-orange);
+  box-shadow: 0 0 0 0 --theme(--color-primary-orange / 85);
+  animation: l2 1.8s infinite linear;
+  animation-play-state: paused;
+  position: relative;
+  &.running {
+    animation-play-state: running;
+  }
+  &:before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 var(--color-primary-orange);
+    animation: inherit;
+    animation-delay: -0.6s;
+  }
+  &:after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 var(--color-primary-orange);
+    animation: inherit;
+    animation-delay: -0.6s;
+  }
+  &:after {
+    animation-delay: -1.2s;
+  }
+}
+
+@utility running {
+  &.wave {
+    animation-play-state: running;
+  }
+}
 
 @layer base {
   body, html, #root {
@@ -16,56 +105,18 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-transparent rounded;
+    @apply bg-transparent rounded-sm;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-light-gray border border-white rounded;
+    @apply bg-light-gray border border-white rounded-sm;
   }
 }
 
 @layer components {
-  .user-bubble, .assistant-bubble {
-    @apply inline-block max-w-[80%] sm:max-w-[450px] py-2 px-4 rounded-2xl;
-  }
-
-  .user-bubble {
-    @apply bg-light-gray text-main-text;
-  }
-
-  .assistant-bubble {
-    @apply self-end bg-primary-blue/85 text-white;
-  }
-
-  .wave {
-    width: 30px;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: theme(colors.primary-orange);
-    box-shadow: 0 0 0 0 theme(colors.primary-orange / 85);
-    animation: l2 1.8s infinite linear;
-    animation-play-state: paused;
-    position: relative;
-  }
-  .wave.running {
-    animation-play-state: running;
-  }
-  .wave:before,
-  .wave:after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    box-shadow: 0 0 0 0 theme(colors.primary-orange);
-    animation: inherit;
-    animation-delay: -0.6s;
-  }
-  .wave:after {
-    animation-delay: -1.2s;
-  }
   @keyframes l2 {
     100% {
-      box-shadow: 0 0 0 45px theme(colors.primary-orange / 0);
+      box-shadow: 0 0 0 45px --theme(--color-primary-orange / 0);
     }
   }
 }
