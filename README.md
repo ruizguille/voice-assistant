@@ -2,8 +2,6 @@
 
 This repository contains an AI Voice Assistant application built with Python and React, utilizing Deepgram for speech-to-text and text-to-speech functionality, and Llama 3 with Groq for natural language processing.
 
-You can access a live demo of the AI Voice Assistant application [in this link](https://voice-assistant.codeawake.com).
-
 For a detailed walkthrough of the code and the technologies used, check out our blog post series:
 - [Part 1: A local Python voice assistant app](https://codeawake.com/blog/ai-voice-assistant-1).
 - [Part 2: A Python backend with FastAPI & WebSockets](https://codeawake.com/blog/ai-voice-assistant-2).
